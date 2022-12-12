@@ -4,10 +4,51 @@
 import datetime
 import argparse
 import logging
+# import pkg_resources
+# import subprocess
+# import sys
 import traceback
 
 # Local import until it's in PyPi
 from synology_abfb_log_parser import synology_abfb_log_parser
+
+
+# def install(*modules):
+#     """
+#     Install the required Python modules if they are not installed.
+#     See https://stackoverflow.com/a/44210735
+#     Search for modules: https://pypi.org/
+#     :param modules: list of required modules
+#     :return: None
+#     """
+#     if not modules:
+#         return
+#     required = set(modules)
+#     installed = {pkg.key for pkg in pkg_resources.working_set}
+#     missing = required - installed
+#
+#     if missing:
+#         logging.info(f'Installing modules:', *missing)
+#         try:
+#             python = sys.executable
+#             subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
+#         except subprocess.CalledProcessError as err:
+#             logging.error(f'Failed to install the required modules: {missing}')
+#             logging.error(err)
+#             exit(1)
+#
+#
+# try:
+#     import datetime
+#     import glob
+# except ModuleNotFoundError:
+#     req = {'datetime', 'glob2'}
+#     if sys.platform == 'win32':
+#         install(*req)
+#     else:
+#         logging.error(f'Required modules are not installed: {req}')
+#         logging.error('Automatic module installation is supported only on Windows')
+#         exit(1)
 
 
 def main(logger=logging.getLogger(), ago_unit='day', ago_value=1, log_path='', log_glob='log.txt*'):

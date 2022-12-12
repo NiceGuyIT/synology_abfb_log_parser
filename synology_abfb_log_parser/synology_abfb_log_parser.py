@@ -1,60 +1,18 @@
 # Synology Active Backup for Business log parser
-#   https://kb.synology.com/en-br/DSM/help/ActiveBackup/activebackup_business_activities?version=7
-# Future enhancement might be to use the Synology API:
-#   https://github.com/N4S4/synology-api
-#
 # Version: 0.1.0
 # Author: David Randall
-# GitHUb: github.com/NiceGuyIT
-# URL: NiceGuyIT.biz
+# GitHub: https://github.com/NiceGuyIT/synology_abfb_log_parser
+# PyPi: https://pypi.org/project/synology-abfb-log-parser/
+# URL: https://NiceGuyIT.biz
 #
+import datetime
+import glob
 import json
 import logging
 import os.path
-import traceback
-
-import pkg_resources
 import re
-import subprocess
 import sys
-
-
-def install(*modules):
-    """
-    Install the required Python modules if they are not installed.
-    See https://stackoverflow.com/a/44210735
-    Search for modules: https://pypi.org/
-    :param modules: list of required modules
-    :return: None
-    """
-    if not modules:
-        return
-    required = set(modules)
-    installed = {pkg.key for pkg in pkg_resources.working_set}
-    missing = required - installed
-
-    if missing:
-        logging.info(f'Installing modules:', *missing)
-        try:
-            python = sys.executable
-            subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
-        except subprocess.CalledProcessError as err:
-            logging.error(f'Failed to install the required modules: {missing}')
-            logging.error(err)
-            exit(1)
-
-
-try:
-    import datetime
-    import glob
-except ModuleNotFoundError:
-    req = {'datetime', 'glob2'}
-    if sys.platform == 'win32':
-        install(*req)
-    else:
-        logging.error(f'Required modules are not installed: {req}')
-        logging.error('Automatic module installation is supported only on Windows')
-        exit(1)
+import traceback
 
 
 def fix_single_quotes(json_str):
@@ -169,7 +127,7 @@ class SynologyActiveBackupLogParser(object):
             self.__log_path = log_path
 
         # __re_timestamp is a regular expression to extract the timestamp from the beginning of the logs.
-        self.__re_log_entry = re.compile(r'^(?P<month>\w{3}) (?P<day>\d+) (?P<time>[\d:]{8}) \[(?P<priority>\w+)\] (?P<method_name>[\w\.-]+) \((?P<method_num>\d+)\): ?(?P<message>.*)$')
+        self.__re_log_entry = re.compile(r'^(?P<month>\w{3}) (?P<day>\d+) (?P<time>[\d:]{8}) \[(?P<priority>\w+)] (?P<method_name>[\w.-]+) \((?P<method_num>\d+)\): ?(?P<message>.*)$')
 
         # __now is a timestamp used to determine if the log entry is after "now". 1 minute is added for
         # processing time.

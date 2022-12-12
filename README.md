@@ -1,6 +1,8 @@
 # Synology Active Backups for Business log parser
 
-`synology_abfb_log_parser` parses the Synology Active Backups for Business logs on the agent allowing and provides a way to search the logs. The examples show how to send a TRMM alert for various log entries.
+`synology_abfb_log_parser` parses the [Synology Active Backups for Business][1] logs on the agent allowing and provides a way to search the logs. The examples show how to send a TRMM alert for various log entries.
+
+[1]: https://kb.synology.com/en-br/DSM/help/ActiveBackup/activebackup_business_activities?version=7
 
 ## Events
 
