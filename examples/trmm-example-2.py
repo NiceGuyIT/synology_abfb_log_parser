@@ -6,10 +6,8 @@ import argparse
 import logging
 import traceback
 
-# TRMM snippet for production
-# {{synology_activebackuplogs_snippet.py}}
-# Dev
-import synology_activebackuplogs_snippet
+# Local import until it's in PyPi
+from synology_abfb_log_parser import synology_abfb_log_parser
 
 
 def main(logger=logging.getLogger(), ago_unit='day', ago_value=1, log_path='', log_glob='log.txt*'):
@@ -24,7 +22,7 @@ def main(logger=logging.getLogger(), ago_unit='day', ago_value=1, log_path='', l
     after = datetime.timedelta(**{ago_unit: ago_value})
 
     logger.debug('Instantiating the synology_activebackuplogs_snippet class')
-    synology = synology_activebackuplogs_snippet.SynologyActiveBackupLogParser(
+    synology = synology_abfb_log_parser.SynologyActiveBackupLogParser(
         # Search logs within the period specified.
         # timedelta() will be off by 1 minute because 1 minute is added to detect if the log entry is last year vs.
         # this year. This should be negligible.

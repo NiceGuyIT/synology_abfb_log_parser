@@ -1,13 +1,8 @@
-# trmm-python
+# Synology Active Backups for Business log parser
 
-This repository contains various Python scripts for Tactical RMM.
+`synology_abfb_log_parser` parses the Synology Active Backups for Business logs on the agent allowing and provides a way to search the logs. The examples show how to send a TRMM alert for various log entries.
 
-## Synology Active Backups for Business Logs
-
-`synology_activebackuplogs_snippet.py` is a TRMM snippet that parses the Synology Active Backup logs and allow you to
-search them. The examples are a great place to start.
-
-### Events
+## Events
 
 Events have the following structure. Given this log entry:
 ```text
@@ -23,13 +18,8 @@ events[0] = {
     "method_name": "async-worker.cpp",
     "method_num": "56",
     "message": "Worker (0): get event '1: routine {\"subaction\": \"heart_beat\"}', start processing",
-    "json_str": "{\"subaction\": \"heart_beat\"}",
     "json": {
         "subaction": "heart_beat"
     },
 }
 ```
-
-### Program
-
-See the examples programs to search for log events.
