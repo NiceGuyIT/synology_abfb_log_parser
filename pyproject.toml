@@ -5,7 +5,7 @@ requires = [
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "synology_abfb_log_parser/__about__.py"
+path = "src/synology_abfb_log_parser/__about__.py"
 
 [project]
 name = "synology_abfb_log_parser"
