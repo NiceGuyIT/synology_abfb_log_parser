@@ -35,6 +35,7 @@ def install(*modules):
             exit(1)
 
 
+requirements = {'datetime', 'glob2', 'synology_abfb_log_parser'}
 try:
     import datetime
     import glob
@@ -42,13 +43,17 @@ try:
 except ModuleNotFoundError:
     # FIXME: datetime should be in the base distro
     # FIXME: Is glob2 necessary? Will glob work?
-    req = {'datetime', 'glob2', 'synology_abfb_log_parser'}
     if sys.platform == 'win32':
-        install(*req)
+        install(*requirements)
     else:
         logging.error(f'Required modules are not installed: {req}')
         logging.error('Automatic module installation is supported only on Windows')
         exit(1)
+
+# Only update the Synology log parser
+requirements = {'synology_abfb_log_parser'}
+if sys.platform == 'win32':
+    install(*requirements)
 
 # Reload the modules if they were installed or updated.
 reload(datetime)
