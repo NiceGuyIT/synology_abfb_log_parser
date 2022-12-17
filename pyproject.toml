@@ -1,11 +1,17 @@
 [build-system]
-#requires = ["hatchling"]
-#build-backend = "hatchling.build"
-requires = ["poetry_core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "hatchling"
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "synology_abfb_log_parser/__about__.py"
 
 [project]
 name = "synology_abfb_log_parser"
+dynamic = [
+    "version"
+]
 version = "0.1.2"
 authors = [
     { name="David Randall", email="David@NiceGuyIT.biz" },
