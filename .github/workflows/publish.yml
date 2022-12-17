@@ -22,4 +22,7 @@ jobs:
                 run: |
                     python -m hatch version $(git describe --tags --abbrev=0)
                     python -m hatch build
-                    python -m twine upload --verbose --username ${{ secrets.PYPI_API_USERNAME }} --password ${{ secrets.PYPI_API_TOKEN }}
+                    python -m twine upload --verbose \
+                        --username ${{ secrets.PYPI_API_USERNAME }} \
+                        --password ${{ secrets.PYPI_API_TOKEN }} \
+                        dist/synology_abfb_log_parser-*
