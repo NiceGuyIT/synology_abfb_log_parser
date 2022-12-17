@@ -12,7 +12,6 @@ name = "synology_abfb_log_parser"
 dynamic = [
     "version"
 ]
-version = "0.1.2"
 authors = [
     { name="David Randall", email="David@NiceGuyIT.biz" },
 ]
