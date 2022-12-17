@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synology_abfb_log_parser"
-version = "0.1.0"
+version = "0.1.2"
 authors = [
     { name="David Randall", email="David@NiceGuyIT.biz" },
 ]

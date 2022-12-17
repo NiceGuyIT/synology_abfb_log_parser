@@ -1,57 +1,55 @@
 #!/usr/bin/env python3
 
 # This example will return the ERRORs from the last hour
-import datetime
 import argparse
 import logging
-# import pkg_resources
-# import subprocess
-# import sys
+import pkg_resources
+import subprocess
+import sys
 import traceback
 
-# Local import until it's in PyPi
-from synology_abfb_log_parser import synology_abfb_log_parser
+
+def install(*modules):
+    """
+    Install the required Python modules if they are not installed.
+    See https://stackoverflow.com/a/44210735
+    Search for modules: https://pypi.org/
+    :param modules: list of required modules
+    :return: None
+    """
+    if not modules:
+        return
+    required = set(modules)
+    installed = {pkg.key for pkg in pkg_resources.working_set}
+    missing = required - installed
+
+    if missing:
+        logging.info(f'Installing modules:', *missing)
+        try:
+            python = sys.executable
+            subprocess.check_call([python, '-m', 'pip', 'install', '--upgrade', *missing], stdout=subprocess.DEVNULL)
+        except subprocess.CalledProcessError as err:
+            logging.error(f'Failed to install the required modules: {missing}')
+            logging.error(err)
+            exit(1)
 
 
-# def install(*modules):
-#     """
-#     Install the required Python modules if they are not installed.
-#     See https://stackoverflow.com/a/44210735
-#     Search for modules: https://pypi.org/
-#     :param modules: list of required modules
-#     :return: None
-#     """
-#     if not modules:
-#         return
-#     required = set(modules)
-#     installed = {pkg.key for pkg in pkg_resources.working_set}
-#     missing = required - installed
-#
-#     if missing:
-#         logging.info(f'Installing modules:', *missing)
-#         try:
-#             python = sys.executable
-#             subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
-#         except subprocess.CalledProcessError as err:
-#             logging.error(f'Failed to install the required modules: {missing}')
-#             logging.error(err)
-#             exit(1)
-#
-#
-# try:
-#     import datetime
-#     import glob
-# except ModuleNotFoundError:
-#     req = {'datetime', 'glob2'}
-#     if sys.platform == 'win32':
-#         install(*req)
-#     else:
-#         logging.error(f'Required modules are not installed: {req}')
-#         logging.error('Automatic module installation is supported only on Windows')
-#         exit(1)
+try:
+    import datetime
+    import glob
+    import synology_abfb_log_parser.synology_abfb_log_parser
+except ModuleNotFoundError:
+    # FIXME: datetime should be in the base distro
+    req = {'datetime', 'glob2', 'synology_abfb_log_parser'}
+    if sys.platform == 'win32':
+        install(*req)
+    else:
+        logging.error(f'Required modules are not installed: {req}')
+        logging.error('Automatic module installation is supported only on Windows')
+        exit(1)
 
 
-def main(logger=logging.getLogger(), ago_unit='day', ago_value=1, log_path='', log_glob='log.txt*'):
+def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', log_glob='log.txt*'):
     # timedelta docs: https://docs.python.org/3/library/datetime.html#timedelta-objects
     # Note: 'years' is not valid. Use 'days=365' to represent one year.
     # Values include:
@@ -63,7 +61,8 @@ def main(logger=logging.getLogger(), ago_unit='day', ago_value=1, log_path='', l
     after = datetime.timedelta(**{ago_unit: ago_value})
 
     logger.debug('Instantiating the synology_activebackuplogs_snippet class')
-    synology = synology_abfb_log_parser.SynologyActiveBackupLogParser(
+    # Importing is done by package.subpackage.Class()
+    synology = synology_abfb_log_parser.synology_abfb_log_parser.SynologyActiveBackupLogParser(
         # Search logs within the period specified.
         # timedelta() will be off by 1 minute because 1 minute is added to detect if the log entry is last year vs.
         # this year. This should be negligible.
@@ -156,7 +155,7 @@ if __name__ == '__main__':
                         help='path to the Synology log files')
     parser.add_argument('--log-glob', default='log.txt*', type=str,
                         help='filename glob for the log files')
-    parser.add_argument('--ago-unit', default='day', type=str,
+    parser.add_argument('--ago-unit', default='days', type=str,
                         help='time span unit, one of [seconds, minutes, hours, days, weeks]')
     parser.add_argument('--ago-value', default='1', type=int,
                         help='time span value')
