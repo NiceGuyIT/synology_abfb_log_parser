@@ -1,2 +1,2 @@
-# synology_abfb_log_parser module
-from . import synology_abfb_log_parser
+# abfb_log_parser module
+from . import abfb_log_parser

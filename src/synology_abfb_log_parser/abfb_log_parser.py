@@ -84,9 +84,9 @@ def fix_simple(json_str):
     return json_str.replace(', }', '}').replace('\\', '\\\\')
 
 
-class SynologyActiveBackupLogParser(object):
+class ActiveBackupLogParser(object):
     """
-    SynologyActiveBackupLogParser will consume Synology Active Backup logs, parse them and make them available for
+    ActiveBackupLogParser will consume Synology Active Backup logs, parse them and make them available for
     searching.
     """
 

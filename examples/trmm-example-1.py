@@ -7,6 +7,7 @@ import pkg_resources
 import subprocess
 import sys
 import traceback
+from importlib import reload
 
 
 def install(*modules):
@@ -37,9 +38,10 @@ def install(*modules):
 try:
     import datetime
     import glob
-    import synology_abfb_log_parser.synology_abfb_log_parser
+    import synology_abfb_log_parser
 except ModuleNotFoundError:
     # FIXME: datetime should be in the base distro
+    # FIXME: Is glob2 necessary? Will glob work?
     req = {'datetime', 'glob2', 'synology_abfb_log_parser'}
     if sys.platform == 'win32':
         install(*req)
@@ -47,6 +49,11 @@ except ModuleNotFoundError:
         logging.error(f'Required modules are not installed: {req}')
         logging.error('Automatic module installation is supported only on Windows')
         exit(1)
+
+# Reload the modules if they were installed or updated.
+reload(datetime)
+reload(glob)
+reload(synology_abfb_log_parser)
 
 
 def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', log_glob='log.txt*'):
@@ -62,7 +69,7 @@ def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', 
 
     logger.debug('Instantiating the synology_activebackuplogs_snippet class')
     # Importing is done by package.subpackage.Class()
-    synology = synology_abfb_log_parser.synology_abfb_log_parser.SynologyActiveBackupLogParser(
+    synology = synology_abfb_log_parser.bfb_log_parser.ActiveBackupLogParser(
         # Search logs within the period specified.
         # timedelta() will be off by 1 minute because 1 minute is added to detect if the log entry is last year vs.
         # this year. This should be negligible.
