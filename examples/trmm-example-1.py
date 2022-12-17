@@ -46,7 +46,7 @@ except ModuleNotFoundError:
     if sys.platform == 'win32':
         install(*requirements)
     else:
-        logging.error(f'Required modules are not installed: {req}')
+        logging.error(f'Required modules are not installed: {requirements}')
         logging.error('Automatic module installation is supported only on Windows')
         exit(1)
 
