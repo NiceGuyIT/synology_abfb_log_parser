@@ -20,6 +20,6 @@ jobs:
                     python -m pip install --upgrade pip build hatchling twine
             -   name: Build and publish
                 run: |
-                    hatch version $(git describe --tags --abbrev=0)
-                    hatch build
-                    twine upload --verbose --username ${{ secrets.PYPI_API_USERNAME }} --password ${{ secrets.PYPI_API_TOKEN }}
+                    python -m hatch version $(git describe --tags --abbrev=0)
+                    python -m hatch build
+                    python -m twine upload --verbose --username ${{ secrets.PYPI_API_USERNAME }} --password ${{ secrets.PYPI_API_TOKEN }}
