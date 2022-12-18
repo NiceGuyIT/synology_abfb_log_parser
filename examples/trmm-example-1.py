@@ -7,74 +7,67 @@ import pkg_resources
 import subprocess
 import sys
 import traceback
-from importlib import reload
 
 
-def install(*modules):
+def pip_install_upgrade(modules, logger=logging.getLogger(), upgrade=False):
     """
-    Install the required Python modules if they are not installed.
-    See https://stackoverflow.com/a/44210735
-    Search for modules: https://pypi.org/
-    :param modules: list of required modules
+    Install or upgrade the specified Python modules using 'pip install'.
+    :param modules: set of modules to install/upgrade
+    :param logger: logging instance of the root logger
+    :param upgrade: Bool If True, upgrade the modules.
     :return: None
     """
     if not modules:
         return
-    required = set(modules)
-    installed = {pkg.key for pkg in pkg_resources.working_set}
-    missing = required - installed
+    required_modules = set(modules)
+    try:
+        python = sys.executable
+        logger.info(f'Installing/upgrading modules: {required_modules}')
+        if upgrade:
+            subprocess.check_call([python, '-m', 'pip', 'install', '--upgrade', *required_modules], stdout=subprocess.DEVNULL)
+        else:
+            subprocess.check_call([python, '-m', 'pip', 'install', *required_modules], stdout=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as err:
+        logger.error(f'Failed to install/upgrade the required modules: {required_modules}')
+        logger.error(err)
+        exit(1)
 
-    if missing:
-        logging.info(f'Installing modules:', *missing)
-        try:
-            python = sys.executable
-            subprocess.check_call([python, '-m', 'pip', 'install', '--upgrade', *missing], stdout=subprocess.DEVNULL)
-        except subprocess.CalledProcessError as err:
-            logging.error(f'Failed to install the required modules: {missing}')
-            logging.error(err)
-            exit(1)
 
-
-requirements = {'datetime', 'glob2', 'synology_abfb_log_parser'}
+# Check if the modules are installed
 try:
     import datetime
     import glob
     import synology_abfb_log_parser
 except ModuleNotFoundError:
-    # FIXME: datetime should be in the base distro
-    # FIXME: Is glob2 necessary? Will glob work?
-    if sys.platform == 'win32':
-        install(*requirements)
-    else:
-        logging.error(f'Required modules are not installed: {requirements}')
-        logging.error('Automatic module installation is supported only on Windows')
-        exit(1)
-
-# Only update the Synology log parser
-requirements = {'synology_abfb_log_parser'}
-if sys.platform == 'win32':
-    install(*requirements)
-
-# Reload the modules if they were installed or updated.
-reload(datetime)
-reload(glob)
-reload(synology_abfb_log_parser)
+    required = {'synology_abfb_log_parser'}
+    installed = {pkg.key for pkg in pkg_resources.working_set}
+    missing = required - installed
+    if missing:
+        pip_install_upgrade(**{
+            'modules': missing
+        })
+        # Import the modules if they were just installed. Duplicate imports are ignored.
+        import datetime
+        import glob
+        import synology_abfb_log_parser
 
 
 def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', log_glob='log.txt*'):
-    # timedelta docs: https://docs.python.org/3/library/datetime.html#timedelta-objects
-    # Note: 'years' is not valid. Use 'days=365' to represent one year.
-    # Values include:
-    #   weeks
-    #   days
-    #   hours
-    #   minutes
-    #   seconds
+    """
+    Main program
+    :param logger: logging instance of the root logger
+    :param ago_unit: string Units of datetime.timedelta. One of ['weeks', 'days', 'hours', 'minutes', 'seconds']
+        Note: 'years' and 'months' is not valid.
+        See timedelta docs for details: https://docs.python.org/3/library/datetime.html#timedelta-objects
+    :param ago_value: int Value of datetime.timedelta
+    :param log_path: string Path to the log files.
+    :param log_glob: string Filename glob for the log files. Defaults to 'log.txt*'
+    :return: None
+    """
     after = datetime.timedelta(**{ago_unit: ago_value})
 
-    logger.debug('Instantiating the synology_activebackuplogs_snippet class')
-    # Importing is done by package.subpackage.Class()
-    synology = synology_abfb_log_parser.bfb_log_parser.ActiveBackupLogParser(
+    # Since the package was imported, the syntax is package.subpackage.Class()
+    synology = synology_abfb_log_parser.abfb_log_parser.ActiveBackupLogParser(
         # Search logs within the period specified.
         # timedelta() will be off by 1 minute because 1 minute is added to detect if the log entry is last year vs.
         # this year. This should be negligible.
@@ -129,7 +122,7 @@ def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', 
             ts_backup = datetime.datetime.fromtimestamp(event['json']['backup_result']['last_success_time'])
             delta_backup = datetime.datetime.now() - ts_backup
             # delta_backup.days is an integer and does not take into account hours.
-            if event['json']['backup_result']['last_backup_status'] == 'complete' and delta_backup.days >= 3:
+            if event['json']['backup_result']['last_backup_status'] == 'complete' and delta_backup.days >= ago_value:
                 errors_found = True
 
             # Always print the output, so it's visible to the users.
@@ -171,6 +164,8 @@ if __name__ == '__main__':
                         help='time span unit, one of [seconds, minutes, hours, days, weeks]')
     parser.add_argument('--ago-value', default='1', type=int,
                         help='time span value')
+    parser.add_argument('--auto-upgrade', default=False, action='store_true',
+                        help='auto-upgrade the synology_abfb_log_parser module')
     args = parser.parse_args()
 
     # Change default log level to INFO
@@ -182,10 +177,18 @@ if __name__ == '__main__':
     top_logger = logging.getLogger()
     top_logger.setLevel(default_log_level)
 
+    if args.auto_upgrade:
+        requirements = {'synology_abfb_log_parser'}
+        pip_install_upgrade(**{
+            'modules': requirements,
+            'logger': top_logger,
+            'upgrade': True,
+        })
+
     main(**{
         'logger': top_logger,
         'log_path': args.log_path,
         'log_glob': args.log_glob,
         'ago_unit': args.ago_unit,
-        'ago_value': args.ago_value
+        'ago_value': args.ago_value,
     })

@@ -206,7 +206,6 @@ class ActiveBackupLogParser(object):
                             'method_name': ts_match['method_name'],
                             'method_num': ts_match['method_num'],
                             'message': ts_match['message'].strip(),
-                            # 'json_str': None,
                             'json': None,
                         })
 
@@ -255,6 +254,7 @@ class ActiveBackupLogParser(object):
                     # Valid JSON found. Don't need to look for more.
                     return
                 except json.decoder.JSONDecodeError as err:
+                    self.__logger.error('=====')
                     self.__logger.error('ERR: Failed to parse JSON from message')
                     self.__logger.error('Input JSON string:')
                     self.__logger.error(json_str)

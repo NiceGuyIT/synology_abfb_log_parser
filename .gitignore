@@ -3,6 +3,9 @@ logs/
 log.zip
 *.json
 
+# Example output
+tmp/
+
 # PyPi configuration
 .pypirc
 
