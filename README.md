@@ -25,3 +25,20 @@ events[0] = {
     },
 }
 ```
+
+A simple script to print all ERRORs in the last 3 hours.
+```Python
+import datetime
+import synology_abfb_log_parser
+
+after = datetime.timedelta(**{"hours": 3})
+find = {
+    'priority': 'ERROR',
+}
+synology = synology_abfb_log_parser.abfb_log_parser.ActiveBackupLogParser(
+    after=after,
+)
+synology.load()
+found = synology.search(find=find)
+print(found)
+```
