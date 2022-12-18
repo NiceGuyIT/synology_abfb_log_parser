@@ -1,6 +1,56 @@
 #!/usr/bin/env python3
+# Copyright 2022, Nice Guy IT, LLC. All rights reserved.
+# SPDX-License-Identifier: MIT
+# Source: https://github.com/NiceGuyIT/synology_abfb_log_parser
+"""
+**IMPORTANT**
+This script will install the "synology_abfb_log_parser" Python modules in the TRMM Python distribution.
+Use at your own risk. Existing modules are not upgraded.
 
-# This example will return all events with backup_results in the JSON.
+The '--auto-upgrade' parameter will upgrade the "synology_abfb_log_parser" module on every run. This switch is disabled
+by default because applications should not auto-update in production unless specifically authorized.
+If you're lazy and don't mind an occasional hiccup, create a script check with '--auto-upgrade' and schedule it
+to run daily or weekly.
+
+*Note*: When adding arguments to the script in TRMM, use an equals sign "=" to separate the parameter from the value.
+For example, use this:
+  --ago-unit=hours --ago-value=3
+Do not use this as it generate an error:
+  --ago-unit hours --ago-value 3
+
+
+This example will return logs where the "last_backup_status" is "complete" and "last_success_time" was more than
+'--complete-days-ago'. For example:
+    --ago-unit=hours --ago-value=12 --complete-days-ago=3 -> Search the logs for the past 12 hours and return entries
+        where the "backup_result.last_backup_status" is "complete" and "backup_result.last_success_time" was more than
+        3 days ago.
+
+$ python3 trmm-example-2.py --help
+usage: trmm-example-2.py [-h]
+                         [--log-level {debug,info,warning,error,critical}]
+                         [--log-path LOG_PATH] [--log-glob LOG_GLOB]
+                         [--ago-unit AGO_UNIT] [--ago-value AGO_VALUE]
+                         [--complete-days-ago COMPLETE_DAYS_AGO]
+                         [--auto-upgrade]
+
+Parse the Synology Active Backup for Business logs.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --log-level {debug,info,warning,error,critical}
+                        set log level for the Synology Active Backup for
+                        Business module
+  --log-path LOG_PATH   path to the Synology log files
+  --log-glob LOG_GLOB   filename glob for the log files
+  --ago-unit AGO_UNIT   time span unit, one of [seconds, minutes, hours, days,
+                        weeks]
+  --ago-value AGO_VALUE
+                        time span value
+  --complete-days-ago COMPLETE_DAYS_AGO
+                        days ago that a complete backup indicates failure
+  --auto-upgrade        auto-upgrade the synology_abfb_log_parser module
+
+"""
 import argparse
 import logging
 import pkg_resources
@@ -22,7 +72,7 @@ def pip_install_upgrade(modules, logger=logging.getLogger(), upgrade=False):
     required_modules = set(modules)
     try:
         python = sys.executable
-        logger.info(f'Installing/upgrading  modules: {required_modules}')
+        logger.info(f'Installing/upgrading modules: {required_modules}')
         if upgrade:
             subprocess.check_call([python, '-m', 'pip', 'install', '--upgrade', *required_modules], stdout=subprocess.DEVNULL)
         else:
@@ -52,7 +102,7 @@ except ModuleNotFoundError:
         import synology_abfb_log_parser
 
 
-def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', log_glob='log.txt*'):
+def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path=None, log_glob='log.txt*', complete_days_ago=3):
     """
     Main program
     :param logger: logging instance of the root logger
@@ -62,6 +112,7 @@ def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', 
     :param ago_value: int Value of datetime.timedelta
     :param log_path: string Path to the log files.
     :param log_glob: string Filename glob for the log files. Defaults to 'log.txt*'
+    :param complete_days_ago: int Days ago that a complete backup log does not exist indicates a failure
     :return: None
     """
     after = datetime.timedelta(**{ago_unit: ago_value})
@@ -84,17 +135,22 @@ def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', 
     )
 
     # Load the log entries
-    logger.debug(f'Loading log files in "{log_path}"')
+    if log_path:
+        logger.debug(f'Loading log files in "{log_path}"')
+    else:
+        logger.debug(f'Loading log files in the default location')
     synology.load()
 
     # Search for entries that match the criteria.
     find = {
         'method_name': 'server-requester.cpp',
-        # 'json': {
-        #     'backup_result': {
-        #         # Find all records with backup_results
-        #     }
-        # },
+        'json': {
+            'backup_result': {
+                'last_backup_status': {
+                    # Find all records with backup_results
+                }
+            }
+        },
     }
     logger.debug('Searching the log files')
     found = synology.search(find=find)
@@ -127,19 +183,20 @@ def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path='', 
             ts_backup = datetime.datetime.fromtimestamp(event['json']['backup_result']['last_success_time'])
             delta_backup = datetime.datetime.now() - ts_backup
             # delta_backup.days is an integer and does not take into account hours.
-            if event['json']['backup_result']['last_backup_status'] == 'complete' and delta_backup.days >= 3:
+            if event['json']['backup_result']['last_backup_status'] == 'complete' and delta_backup.days >= complete_days_ago:
                 errors_found = True
 
-            # Always print the output, so it's visible to the users.
-            task_name = ''
-            transferred = 0
-            if 'running_task_result' in event['json']:
-                if 'task_name' in event['json']['running_task_result']:
-                    task_name = event['json']['running_task_result']['task_name']
-                if 'transfered_bytes' in event['json']['running_task_result']:
-                    transferred = event['json']['running_task_result']['transfered_bytes']
+                task_name = ''
+                transferred = 0
+                if 'running_task_result' in event['json']:
+                    if 'task_name' in event['json']['running_task_result']:
+                        task_name = event['json']['running_task_result']['task_name']
+                    if 'transfered_bytes' in event['json']['running_task_result']:
+                        transferred = event['json']['running_task_result']['transfered_bytes']
 
-            print(f"{ts}: {event['json']['backup_result']}    Task name: '{task_name}'    Transferred: '{transferred}'    Days/Hours ago: {delta_backup}")
+                # Always print the output, so it's visible to the users.
+                print(f"{ts}: {event['json']['backup_result']}    Task name: '{task_name}'    Transferred: '{transferred}'    Days/Hours ago: {delta_backup}")
+
         except TypeError as err:
             logging.warning(f'Failed to check for key before using. Skipping this event. ERR: {err}')
             logging.warning(traceback.format_exc())
@@ -165,10 +222,12 @@ if __name__ == '__main__':
                         help='path to the Synology log files')
     parser.add_argument('--log-glob', default='log.txt*', type=str,
                         help='filename glob for the log files')
-    parser.add_argument('--ago-unit', default='days', type=str,
+    parser.add_argument('--ago-unit', default='hours', type=str,
                         help='time span unit, one of [seconds, minutes, hours, days, weeks]')
     parser.add_argument('--ago-value', default='1', type=int,
                         help='time span value')
+    parser.add_argument('--complete-days-ago', default='3', type=int,
+                        help='days ago that a complete backup indicates failure')
     parser.add_argument('--auto-upgrade', default=False, action='store_true',
                         help='auto-upgrade the synology_abfb_log_parser module')
     args = parser.parse_args()
@@ -196,4 +255,5 @@ if __name__ == '__main__':
         'log_glob': args.log_glob,
         'ago_unit': args.ago_unit,
         'ago_value': args.ago_value,
+        'complete_days_ago': args.complete_days_ago,
     })
