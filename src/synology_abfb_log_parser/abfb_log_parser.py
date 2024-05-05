@@ -127,7 +127,9 @@ class ActiveBackupLogParser(object):
             self.__log_path = log_path
 
         # __re_timestamp is a regular expression to extract the timestamp from the beginning of the logs.
-        self.__re_log_entry = re.compile(r'^(?P<month>\w{3}) (?P<day>\d+) (?P<time>[\d:]{8}) \[(?P<priority>\w+)] (?P<method_name>[\w.-]+) \((?P<method_num>\d+)\): ?(?P<message>.*)$')
+        # Note: timezone is optional and not used.
+        # TODO: Should the timezone be used when calculating the timestamp?
+        self.__re_log_entry = re.compile(r'^(?P<month>\w{3}) (?P<day>\d+) (?P<time>[\d:]{8}) (?P<timezone>[\d-]{5,})? ?\[(?P<priority>\w+)] (?P<method_name>[\w.-]+) \((?P<method_num>\d+)\): ?(?P<message>.*)$')
 
         # __now is a timestamp used to determine if the log entry is after "now". 1 minute is added for
         # processing time.

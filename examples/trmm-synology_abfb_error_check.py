@@ -58,6 +58,9 @@ import subprocess
 import sys
 import traceback
 
+# Import the local copy for debugging purposes.
+# sys.path.append('/home/dev/projects/niceguyit/synology_abfb_log_parser/src')
+# import synology_abfb_log_parser
 
 def pip_install_upgrade(modules, logger=logging.getLogger(), upgrade=False):
     """
@@ -87,7 +90,7 @@ def pip_install_upgrade(modules, logger=logging.getLogger(), upgrade=False):
 try:
     import datetime
     import glob
-    import synology_abfb_log_parser
+    # import synology_abfb_log_parser
 except ModuleNotFoundError:
     required = {'synology_abfb_log_parser'}
     installed = {pkg.key for pkg in pkg_resources.working_set}
@@ -99,7 +102,7 @@ except ModuleNotFoundError:
         # Import the modules if they were just installed. Duplicate imports are ignored.
         import datetime
         import glob
-        import synology_abfb_log_parser
+        # import synology_abfb_log_parser
 
 
 def main(logger=logging.getLogger(), ago_unit='days', ago_value=1, log_path=None, log_glob='log.txt*'):

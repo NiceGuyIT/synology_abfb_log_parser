@@ -60,6 +60,9 @@ import subprocess
 import sys
 import traceback
 
+# Import the local copy for debugging purposes.
+# sys.path.append('/home/dev/projects/niceguyit/synology_abfb_log_parser/src')
+# import synology_abfb_log_parser
 
 def pip_install_upgrade(modules, logger=logging.getLogger(), upgrade=False):
     """
